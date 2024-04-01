@@ -1,0 +1,7 @@
+# specify a folder with slash in the end
+# ignore all files in any directory named img, papers
+img/
+
+# ignore all files in any specify file
+*.bin
+*.gz
