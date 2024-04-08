@@ -1,5 +1,11 @@
 # 고령 정신 건강 데이터 분석: 도메인 특화 NLP 적용
 
+## data path
+- 원천 데이터(변환전 .json 형태) : ./data/Training |  ./data/Validataion
+- trainset(json을 csv로 변경) : ./data/train/train_df.csv
+- 추가 trainset : ./data/노년층 대상 감성 분류 모델/train_csv
+- augmentation data : ./data/augmentation/aug_df.csv
+
 ## Git commit message rule
 
 - feat : 새로운 기능
