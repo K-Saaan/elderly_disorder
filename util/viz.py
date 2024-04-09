@@ -79,20 +79,21 @@ def tsne_plot(model, dimensions: int=2):
 
     plt.show()
 
-def tsne_plot_similar_words(model, labels: list, perplexity: int=15, top_n: int=30):
+def tsne_plot_similar_words(model, labels: list, dimensions: int=2, perplexity: int=15, top_n: int=30):
     """
     Visualizes clusters of similar words from a word embedding model using t-SNE.
 
     This function takes a pre-trained word embedding model, a list of seed words (labels),
     and visualizes a scatter plot where each point represents a word. Words that are similar
     are clustered together in the plot. t-SNE is used to reduce the dimensionality of the
-    word vectors to two dimensions.
+    word vectors to two or three dimensions.
 
     Parameters:
     - model (gensim.models.KeyedVectors): A pre-trained word embedding model from Gensim.
       This model should have the `.wv` attribute to access word vectors.
     - labels (list of str): A list of seed words to visualize along with their most similar words.
       Each seed word from this list will form a cluster in the plot.
+    - dimensions (int): The number of dimensions for t-SNE reduction (2 or 3). Default is 2.
     - perplexity (int, optional): The perplexity parameter for the t-SNE model. Perplexity is a
       measure of how to balance attention between local and global aspects of your data. The default
       is 15, but this can be adjusted based on your dataset size and density. The optimal value usually
@@ -112,7 +113,7 @@ def tsne_plot_similar_words(model, labels: list, perplexity: int=15, top_n: int=
     >>> from gensim.models import Word2Vec
     >>> model = Word2Vec.load("your_model_path")
     >>> seed_words = ['king', 'computer', 'paris']
-    >>> tsne_plot_similar_words(model, seed_words, perplexity=20, top_n=25)
+    >>> tsne_plot_similar_words(model, seed_words, dimensions=2, perplexity=20, top_n=25)
     """
     embedding_clusters = []
     word_clusters = []
@@ -120,27 +121,39 @@ def tsne_plot_similar_words(model, labels: list, perplexity: int=15, top_n: int=
         similar_words = model.wv.most_similar(word, topn=top_n)
         words = [word for word, _ in similar_words]
         embeddings = [model.wv[word] for word in words]
-        
+
         embedding_clusters.append(embeddings)
         word_clusters.append(words)
 
     embedding_clusters = np.array(embedding_clusters)
     n, m, k = embedding_clusters.shape
-    tsne_model_en_2d = TSNE(perplexity=perplexity, n_components=2, init='pca', n_iter=3500, random_state=42)
-    embeddings_en_2d = tsne_model_en_2d.fit_transform(embedding_clusters.reshape(-1, k)).reshape(n, m, 2)
+    tsne_model = TSNE(perplexity=perplexity, n_components=dimensions, init='pca', n_iter=3500, random_state=42)
+    embeddings_en = tsne_model.fit_transform(embedding_clusters.reshape(-1, k)).reshape(n, m, dimensions)
 
     plt.figure(figsize=(16, 9))
     colors = cm.rainbow(np.linspace(0, 1, len(labels)))
     
-    for label, embeddings, words, color in zip(labels, embeddings_en_2d, word_clusters, colors):
-        x, y = embeddings[:, 0], embeddings[:, 1]
-        plt.scatter(x, y, c=[color], alpha=0.7, label=label)
-        for i, word in enumerate(words):
-            plt.annotate(word, alpha=0.5, xy=(x[i], y[i]), xytext=(5, 2),
-                         textcoords='offset points', ha='right', va='bottom', fontsize=8)
-            
+    if dimensions == 3:
+        ax = plt.subplot(111, projection='3d')
+        for label, embeddings, words, color in zip(labels, embeddings_en, word_clusters, colors):
+            x, y, z = embeddings[:, 0], embeddings[:, 1], embeddings[:, 2]
+            ax.scatter(x, y, z, c=[color], alpha=0.7, label=label)
+            for i, word in enumerate(words):
+                ax.text(x[i], y[i], z[i], word, size=8, zorder=1, color='k')
+        ax.set_xlabel("Dimension 1")
+        ax.set_ylabel("Dimension 2")
+        ax.set_zlabel("Dimension 3")
+    else:
+        for label, embeddings, words, color in zip(labels, embeddings_en, word_clusters, colors):
+            x, y = embeddings[:, 0], embeddings[:, 1]
+            plt.scatter(x, y, c=[color], alpha=0.7, label=label)
+            for i, word in enumerate(words):
+                plt.annotate(word, alpha=0.5, xy=(x[i], y[i]), xytext=(5, 2),
+                             textcoords='offset points', ha='right', va='bottom', fontsize=8)
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+
     plt.legend(loc='best')
-    plt.xlabel("Dimension 1")
-    plt.ylabel("Dimension 2")
     plt.grid(True)
     plt.show()
+    
