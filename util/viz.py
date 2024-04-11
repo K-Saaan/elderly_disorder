@@ -79,6 +79,7 @@ def tsne_plot(model, dimensions: int=2):
 
     plt.show()
 
+# 매개변수에 주어진 유사한 단어 시각화
 def tsne_plot_similar_words(model, labels: list, dimensions: int=2, perplexity: int=15, top_n: int=30):
     """
     Visualizes clusters of similar words from a word embedding model using t-SNE.
