@@ -4,48 +4,43 @@ import matplotlib.cm as cm
 from sklearn.manifold import TSNE
 from mpl_toolkits.mplot3d import Axes3D  # Import for 3D plotting capabilities
 
-def tsne_plot(model, dimensions: int=2):
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from sklearn.manifold import TSNE
+from mpl_toolkits.mplot3d import Axes3D  # Import for 3D plotting capabilities
+
+def tsne_plot(model, dimensions: int = 2, n_words: int = 100):
     """
-    Visualizes word embeddings using t-SNE (t-Distributed Stochastic Neighbor Embedding) 
-    to reduce the dimensionality to either 2D or 3D for plotting. This function extracts 
-    word vectors from the given model, applies t-SNE to reduce their dimensions, and 
-    plots them using matplotlib.
+    Visualizes word embeddings using t-SNE (t-Distributed Stochastic Neighbor Embedding)
+    to reduce the dimensionality to either 2D or 3D for plotting. This function extracts
+    word vectors from a given model, applies t-SNE to reduce their dimensions, and
+    plots them using matplotlib. Compatible with Word2Vec, GloVe, or any model loaded with
+    Gensim that provides direct access to word vectors.
 
     Parameters:
-    - model (gensim.models.keyedvectors.KeyedVectors): A trained word vector model such as Word2Vec, FastText, 
-      or any model loaded with gensim that supports the `wv` attribute for accessing word vectors.
+    - model (gensim.models.KeyedVectors or any model providing direct vector access): A trained word vector model.
     - dimensions (int, optional): The target dimensionality for t-SNE reduction and plotting. 
       Supports 2 or 3 dimensions. Defaults to 2.
+    - n_words (int, optional): Number of words to visualize. Defaults to 100.
 
     This function automatically adjusts the perplexity value of t-SNE based on the number 
     of samples to ensure optimal layout. For 3D visualization, it makes use of matplotlib's 
     3D plotting capabilities, while for 2D, it uses standard scatter plots. Each point in the 
     plot represents a word, with its position reflecting its relationship to other words based 
     on the model's embeddings.
-
-    Note:
-    - The function plots the first `n_samples` words in the model's vocabulary, where `n_samples`
-      is determined by the length of the tokens list. Adjusting the number of words processed may be 
-      necessary for large models to manage computational and memory resources.
-    - It uses PCA initialization for t-SNE to help with faster convergence and more stable results.
-
-    Example Usage:
-    >>> from gensim.models import Word2Vec
-    >>> model = Word2Vec.load("path_to_your_model")
-    >>> tsne_plot(model, dimensions=3)  # For 3D visualization
-    >>> tsne_plot(model)  # Defaults to 2D visualization
-
     """
     labels = []
     tokens = []
     
     # Extracting words and their vectors from the trained model
-    for word in model.wv.index_to_key:
-        tokens.append(model.wv[word])
+    words = model.index_to_key[:n_words]  # Limit the number of words processed
+    
+    for word in words:
+        tokens.append(model[word])
         labels.append(word)
         
-    n_samples = len(tokens)
-    perplexity_value = min(30, n_samples - 1)
+    perplexity_value = min(30, len(tokens) - 1)
     
     # Train t-SNE based on the specified dimensions
     tsne_model = TSNE(perplexity=perplexity_value, n_components=dimensions, init='pca', n_iter=2500, random_state=42)
@@ -80,7 +75,7 @@ def tsne_plot(model, dimensions: int=2):
     plt.show()
 
 # 매개변수에 주어진 유사한 단어 시각화
-def tsne_plot_similar_words(model, labels: list, dimensions: int=2, perplexity: int=15, top_n: int=30):
+def tsne_plot_similar_words(wv, labels: list, dimensions: int=2, perplexity: int=15, top_n: int=30):
     """
     Visualizes clusters of similar words from a word embedding model using t-SNE.
 
@@ -109,19 +104,13 @@ def tsne_plot_similar_words(model, labels: list, dimensions: int=2, perplexity: 
     - The function plots words in 2D space for visual inspection of similarity and clustering.
     - The colors of the clusters are automatically generated to distinguish between different seed words.
     - Adjusting `perplexity` and `top_n` can significantly affect the visualization's quality and interpretability.
-
-    Example Usage:
-    >>> from gensim.models import Word2Vec
-    >>> model = Word2Vec.load("your_model_path")
-    >>> seed_words = ['king', 'computer', 'paris']
-    >>> tsne_plot_similar_words(model, seed_words, dimensions=2, perplexity=20, top_n=25)
     """
     embedding_clusters = []
     word_clusters = []
     for word in labels:
-        similar_words = model.wv.most_similar(word, topn=top_n)
+        similar_words = wv.most_similar(word, topn=top_n)
         words = [word for word, _ in similar_words]
-        embeddings = [model.wv[word] for word in words]
+        embeddings = [wv[word] for word in words]
 
         embedding_clusters.append(embeddings)
         word_clusters.append(words)
@@ -157,4 +146,3 @@ def tsne_plot_similar_words(model, labels: list, dimensions: int=2, perplexity: 
     plt.legend(loc='best')
     plt.grid(True)
     plt.show()
-    
