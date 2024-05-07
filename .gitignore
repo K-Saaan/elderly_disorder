@@ -1,7 +1,9 @@
 # specify a folder with slash in the end
-# ignore all files in any directory named img, papers
+# ignore all files in specified directory
 img/
+bert_model/
 
 # ignore all files in any specify file
 *.bin
 *.gz
+*.png
